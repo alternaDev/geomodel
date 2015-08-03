@@ -51,6 +51,26 @@ type BoundingBox struct {
 	lonSW float64
 }
 
+type LocationComparableTuple struct {
+	first LocationCapable
+	second float64
+}
+
+type IntArrayDoubleTuple struct {
+	first []int
+	second float64
+}
+
+type ByDistanceIA []IntArrayDoubleTuple
+func (a ByDistanceIA) Len() int 					{ return len(a) }
+func (a ByDistanceIA) Swap(i, j int)		  { a[i], a[j] = a[j], a[i] }
+func (a ByDistanceIA) Less(i, j int) bool { return a[i].second < a[j].second }
+
+type ByDistance []LocationComparableTuple
+func (a ByDistance) Len() int 					{ return len(a) }
+func (a ByDistance) Swap(i, j int)		  { a[i], a[j] = a[j], a[i] }
+func (a ByDistance) Less(i, j int) bool { return a[i].second < a[j].second }
+
 func NewBoundingBox(north, east, south, west float64) BoundingBox {
 	var north_, south_ float64
 	if south > north {
@@ -234,16 +254,6 @@ func computeBox(cell string) BoundingBox {
 	return bbox
 }
 
-type IntArrayDoubleTuple struct {
-	first []int
-	second float64
-}
-
-type ByDistanceIA []IntArrayDoubleTuple
-func (a ByDistanceIA) Len() int 					{ return len(a) }
-func (a ByDistanceIA) Swap(i, j int)		  { a[i], a[j] = a[j], a[i] }
-func (a ByDistanceIA) Less(i, j int) bool { return a[i].second < a[j].second }
-
 func deleteRecords(data []string, remove []string) []string {
     w := 0 // write index
 
@@ -268,16 +278,6 @@ func contains(data []LocationComparableTuple, e LocationComparableTuple) bool {
 	}
 	return false
 }
-
-type LocationComparableTuple struct {
-	first LocationCapable
-	second float64
-}
-
-type ByDistance []LocationComparableTuple
-func (a ByDistance) Len() int 					{ return len(a) }
-func (a ByDistance) Swap(i, j int)		  { a[i], a[j] = a[j], a[i] }
-func (a ByDistance) Less(i, j int) bool { return a[i].second < a[j].second }
 
 func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, search RepositorySearch, maxResolution int) []LocationCapable {
 	var results []LocationComparableTuple
