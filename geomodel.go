@@ -19,6 +19,8 @@ package geomodel
 import "math"
 import "sort"
 import "log"
+import "strings"
+import "reflect"
 
 const (
 	GEOCELL_GRID_SIZE      = 4
@@ -140,7 +142,7 @@ func adjacent(cell string, dir []int) string {
 	var i  int = len(cell) - 1
 
 	for i >= 1 && (dx != 0 || dy != 0) {
-		var l []int = subdivXY(cell[i])
+		var l []int = subdivXY(rune(cell[i]))
 		var x int = l[0]
 		var y int = l[1]
 
@@ -220,8 +222,8 @@ func distanceSortedEdges(cells []string, lat, lon float64) []IntArrayDoubleTuple
 	return result
 }
 
-func subdivXY(char_ uint8) []int {
-	var charI int = int(GEOCELL_ALPHABET[char_])
+func subdivXY(char_ rune) []int {
+	var charI int = strings.IndexRune(GEOCELL_ALPHABET, char_)
 	return []int{(charI & 4) >> 1 | (charI & 1) >> 0, (charI & 8) >> 2 | (charI & 2) >> 1}
 }
 
@@ -240,7 +242,7 @@ func computeBox(cell string) BoundingBox {
 		var subcellLonSpan float64 = (bbox.lonNE - bbox.lonSW) / GEOCELL_GRID_SIZE
 		var subcellLatSpan float64 = (bbox.latNE - bbox.latSW) / GEOCELL_GRID_SIZE
 
-		var l []int = subdivXY(cell[0])
+		var l []int = subdivXY(rune(cell[0]))
 		var x int = l[0]
 		var y int = l[1]
 
@@ -272,7 +274,7 @@ loop:
 
 func contains(data []LocationComparableTuple, e LocationComparableTuple) bool {
 	for _, a := range data {
-		if a.first == e.first && a.second == e.second {
+		if reflect.DeepEqual(a, e) {
 			return true
 		}
 	}
@@ -314,7 +316,7 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 
 		// Begin storing distance from the search result entity to the
     // search center along with the search result itself, in a tuple.
-		var newResults []LocationComparableTuple = make([]LocationComparableTuple, len(newResultEntities), len(newResultEntities) * 2)
+		var newResults []LocationComparableTuple = make([]LocationComparableTuple, len(newResultEntities))
 		for _, entity := range newResultEntities {
 			newResults = append(newResults, LocationComparableTuple{entity, Distance(lat, lon, entity.Latitude(), entity.Longitude())})
 		}
