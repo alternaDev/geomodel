@@ -136,13 +136,13 @@ func Distance(lat1, lon1, lat2, lon2 float64) float64 {
 	return 6378135 * math.Acos(math.Sin(p1lat) * math.Sin(p2lat) + math.Cos(p1lat) * math.Cos(p2lat) * math.Cos(p2lon - p1lon))
 }
 
-func adjacent(cell string, dir []int) string {
+func Adjacent(cell string, dir []int) string {
 	var dx int = dir[0]
 	var dy int = dir[1]
 	var i  int = len(cell) - 1
 
 	for i >= 1 && (dx != 0 || dy != 0) {
-		var l []int = subdivXY(rune(cell[i]))
+		var l []int = SubdivXY(rune(cell[i]))
 		var x int = l[0]
 		var y int = l[1]
 
@@ -181,7 +181,7 @@ func adjacent(cell string, dir []int) string {
 		}
 
 		var l2 []int = []int{x, y}
-		cell = string(append([]byte(cell[:i - 1]), subdivChar(l2)))
+		cell = string(append([]byte(cell[:i - 1]), SubdivChar(l2)))
 		if i < len(cell) {
 			cell = string(append([]byte(cell), []byte(cell[i + 1:])...))
 		}
@@ -195,10 +195,10 @@ func adjacent(cell string, dir []int) string {
 	return cell
 }
 
-func distanceSortedEdges(cells []string, lat, lon float64) []IntArrayDoubleTuple {
+func DistanceSortedEdges(cells []string, lat, lon float64) []IntArrayDoubleTuple {
 	var boxes []BoundingBox = make([]BoundingBox, 0, len(cells))
 	for _, cell := range cells {
-		boxes = append(boxes, computeBox(cell))
+		boxes = append(boxes, ComputeBox(cell))
 	}
 
 	var maxNorth float64 = -math.MaxFloat64
@@ -224,16 +224,16 @@ func distanceSortedEdges(cells []string, lat, lon float64) []IntArrayDoubleTuple
 	return result
 }
 
-func subdivXY(char_ rune) []int {
+func SubdivXY(char_ rune) []int {
 	var charI int = strings.IndexRune(GEOCELL_ALPHABET, char_)
 	return []int{(charI & 4) >> 1 | (charI & 1) >> 0, (charI & 8) >> 2 | (charI & 2) >> 1}
 }
 
-func subdivChar(pos []int) uint8 {
+func SubdivChar(pos []int) uint8 {
 	return GEOCELL_ALPHABET[(pos[1] & 2) << 2 | (pos[0] & 2) << 1 | (pos[1] & 1) << 1 | (pos[0] & 1) << 0]
 }
 
-func computeBox(cell string) BoundingBox {
+func ComputeBox(cell string) BoundingBox {
 	var bbox BoundingBox
 	if cell == "" {
 		return bbox
@@ -244,7 +244,7 @@ func computeBox(cell string) BoundingBox {
 		var subcellLonSpan float64 = (bbox.lonNE - bbox.lonSW) / GEOCELL_GRID_SIZE
 		var subcellLatSpan float64 = (bbox.latNE - bbox.latSW) / GEOCELL_GRID_SIZE
 
-		var l []int = subdivXY(rune(cell[0]))
+		var l []int = SubdivXY(rune(cell[0]))
 		var x int = l[0]
 		var y int = l[1]
 
@@ -346,7 +346,7 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 		sort.Sort(ByDistance(results))
 		results = results[0:int(math.Min(float64(maxResults), float64(len(results))))]
 
-		sortedEdgeDistances = distanceSortedEdges(curGeocells, lat, lon)
+		sortedEdgeDistances = DistanceSortedEdges(curGeocells, lat, lon)
 
 		if len(results) == 0 || len(curGeocells) == 4 {
 			/* Either no results (in which case we optimize by not looking at
@@ -377,9 +377,9 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 			}
 		} else if len(curGeocells) == 1 {
 			var nearestEdge []int = sortedEdgeDistances[0].first
-			curGeocells = append(curGeocells, adjacent(curGeocells[0], nearestEdge))
+			curGeocells = append(curGeocells, Adjacent(curGeocells[0], nearestEdge))
 		} else if len(curGeocells) == 2 {
-			var nearestEdge []int = distanceSortedEdges([]string{curContainingGeocell}, lat, lon)[0].first
+			var nearestEdge []int = DistanceSortedEdges([]string{curContainingGeocell}, lat, lon)[0].first
 			var perpendicularNearestEdge []int = []int{0, 0}
 
 			if(nearestEdge[0] == 0) {
@@ -401,7 +401,7 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 			var tempCells []string = make([]string, 0)
 
 			for _, cell := range curGeocells {
-				tempCells = append(tempCells, adjacent(cell, perpendicularNearestEdge))
+				tempCells = append(tempCells, Adjacent(cell, perpendicularNearestEdge))
 			}
 
 			curGeocells = append(curGeocells, tempCells...)
