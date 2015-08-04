@@ -182,7 +182,9 @@ func adjacent(cell string, dir []int) string {
 
 		var l2 []int = []int{x, y}
 		cell = string(append([]byte(cell[:i - 1]), subdivChar(l2)))
-		cell = string(append([]byte(cell), []byte(cell[i + 1:])...))
+		if i < len(cell) {
+			cell = string(append([]byte(cell), []byte(cell[i + 1:])...))
+		}
 		i--
 	}
 
@@ -194,7 +196,7 @@ func adjacent(cell string, dir []int) string {
 }
 
 func distanceSortedEdges(cells []string, lat, lon float64) []IntArrayDoubleTuple {
-	var boxes []BoundingBox = make([]BoundingBox, len(cells))
+	var boxes []BoundingBox = make([]BoundingBox, 0, len(cells))
 	for _, cell := range cells {
 		boxes = append(boxes, computeBox(cell))
 	}
@@ -284,11 +286,20 @@ func contains(data []LocationComparableTuple, e LocationComparableTuple) bool {
 func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, search RepositorySearch, maxResolution int) []LocationCapable {
 	var results []LocationComparableTuple
 
+	// The current search geocell containing the lat,lon.
 	var curContainingGeocell string = GeoCell(lat, lon, maxResolution)
 
-	var searchedCells []string = make([]string, maxResults, maxResults * 2)
+	var searchedCells []string = make([]string, 0)
 
-	var curGeocells []string = make([]string, maxResults, maxResults * 2)
+	/*
+  * The currently-being-searched geocells.
+  * NOTES:
+  * Start with max possible.
+  * Must always be of the same resolution.
+  * Must always form a rectangular region.
+  * One of these must be equal to the cur_containing_geocell.
+  */
+	var curGeocells []string = make([]string, 0)
 	curGeocells = append(curGeocells, curContainingGeocell)
 	var closestPossibleNextResultDist float64 = 0
 
@@ -316,7 +327,7 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 
 		// Begin storing distance from the search result entity to the
     // search center along with the search result itself, in a tuple.
-		var newResults []LocationComparableTuple = make([]LocationComparableTuple, len(newResultEntities))
+		var newResults []LocationComparableTuple = make([]LocationComparableTuple, 0, len(newResultEntities))
 		for _, entity := range newResultEntities {
 			newResults = append(newResults, LocationComparableTuple{entity, Distance(lat, lon, entity.Latitude(), entity.Longitude())})
 		}
@@ -349,7 +360,7 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 			}
 
 			var oldCurGeocells []string = curGeocells
-			curGeocells = make([]string, 4)
+			curGeocells = make([]string, 0)
 
 			for _, cell := range oldCurGeocells {
 				if len(cell) > 0 {
@@ -387,7 +398,7 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 				}
 			}
 
-			var tempCells []string = make([]string, len(curGeocells))
+			var tempCells []string = make([]string, 0)
 
 			for _, cell := range curGeocells {
 				tempCells = append(tempCells, adjacent(cell, perpendicularNearestEdge))
@@ -398,26 +409,26 @@ func ProximityFetch(lat, lon float64, maxResults int, maxDistance float64, searc
 
 		if len(results) < maxResults {
 			// Keep Searchin!
-			log.Print("%d results found but want %d results, continuing...", len(results), maxResults)
+			log.Printf("%d results found but want %d results, continuing...", len(results), maxResults)
 			continue
 		}
 
 		// Found things!
-		log.Print("%d results found.", len(results))
+		log.Printf("%d results found.", len(results))
 
 		var currentFarthestReturnableResultDist float64 = Distance(lat, lon, results[maxResults - 1].first.Latitude(), results[maxResults - 1].first.Longitude())
 
 		if(closestPossibleNextResultDist >= currentFarthestReturnableResultDist) {
 			// Done
-			log.Print("DONE next result at least %d away, current farthest is %d dist.", closestPossibleNextResultDist, currentFarthestReturnableResultDist)
+			log.Printf("DONE next result at least %d away, current farthest is %d dist.", closestPossibleNextResultDist, currentFarthestReturnableResultDist)
 			break
 		}
 
-		log.Print("next result at least %d away, current farthest is %d dist", closestPossibleNextResultDist, currentFarthestReturnableResultDist)
+		log.Printf("next result at least %d away, current farthest is %d dist", closestPossibleNextResultDist, currentFarthestReturnableResultDist)
 
 	}
 
-	var result []LocationCapable = make([]LocationCapable, maxResults)
+	var result []LocationCapable = make([]LocationCapable, 0)
 
 	for _, entry := range results[0:int(math.Min(float64(maxResults), float64(len(results))))] {
 		if(maxDistance == 0 || entry.second < maxDistance) {
