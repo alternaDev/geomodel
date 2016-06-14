@@ -39,6 +39,11 @@ func TestGeoHash(t *testing.T) {
 	log.Printf("GeoHash: %s", GeoCell(53.12869, 8.18976, 6))
 }
 
+func TestDecodeGeoHash(t *testing.T) {
+	lat, lon := DecodeGeoHash(GeoHash(53.12869, 8.18976, 13))
+	log.Printf("DecodeLat: %f, DecodeLon: %f", lat, lon)
+}
+
 func TestProximityFetch(t *testing.T) {
 
 	// Example Places
